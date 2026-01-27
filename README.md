@@ -7,7 +7,7 @@
 
 **Emojic** is a dangerous experiment in compiler theory. It allows you to write valid C code using emojis as preprocessor definitions. It comes with a full-stack **Emojic Studio** IDE that lets you:
 
-1.  **Compile Emojic to C**: Turn `😒 😊😂🤣👌` into `int main() {`.
+1.  **Compile Emojic to C**: Turn `😒 😊😂🤣👌` into `int main()`.
 2.  **Transform C to Emojic**: Turn your clean code into an unreadable emoji mess.
 3.  **Run in Cloud**: Execute your cursed code instantly via the `compiler.amit.is-a.dev` backend.
 
