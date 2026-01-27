@@ -117,5 +117,5 @@ def transform_to_emojic():
         "emojic_code": final_output
     })
 
-# This is important for Vercel
+# Expose app for Vercel
 app = app
