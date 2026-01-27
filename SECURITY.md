@@ -1,14 +1,5 @@
 # Security Policy
 
-## Supported Versions
-
-Use the most recent version of Emojic.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
-
 ## Reporting a Vulnerability
 
 We take security seriously, even if this project is a joke.
