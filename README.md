@@ -2,7 +2,6 @@
 
 > A chaotic, emoji-based C transpiler and IDE. Write C code using emojis, compile it, or transform normal C into a cursed emoji nightmare.
 
-![Emojic Banner](https://via.placeholder.com/1200x400/0f0f11/eab308?text=Emojic+Studio)
 
 ## What is this?
 
