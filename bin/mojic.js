@@ -12,7 +12,7 @@ import { CipherEngine } from '../lib/CipherEngine.js';
 program
     .name('mojic')
     .description('Obfuscate C source code into emojis')
-    .version('1.0.3')
+    .version('1.1.0')
     .addHelpCommand('help [command]', 'Display help for command')
     .showHelpAfterError();
 
@@ -78,6 +78,19 @@ const createHeaderSkipper = () => {
     });
 };
 
+// --- FLATTENING (Minifier) ---
+const createMinifier = () => {
+    return new Transform({
+        transform(chunk, encoding, cb) {
+            let str = chunk.toString();
+            str = str.replace(/\r?\n|\r/g, ' '); 
+            str = str.replace(/\s+/g, ' ');      
+            this.push(str);
+            cb();
+        }
+    });
+};
+
 // --- Recursive Logic ---
 
 async function traverseDirectory(currentPath, extension, callback) {
@@ -99,18 +112,20 @@ program
     .command('encode')
     .argument('<path>', 'File or Directory to encode')
     .option('-r, --recursive', 'Recursively encrypt all .c files in directory')
+    .option('-f, --flat', 'Flatten structure (strip whitespace/newlines) before encrypting')
     .description('Encrypt a file or directory into emojis')
     .action(async (targetPath, options) => {
         try {
             if (!fs.existsSync(targetPath)) throw new Error('Path not found');
             const stats = fs.statSync(targetPath);
 
-            // Validation
             if (stats.isDirectory() && !options.recursive) {
                 throw new Error(`'${targetPath}' is a directory. Use -r to process recursively.`);
             }
 
-            console.log(chalk.blue('🔒 Initiating Mojic Encryption...'));
+            console.log(chalk.blue('Initiating Mojic Encryption v1.1...'));
+            if (options.flat) console.log(chalk.yellow('   -> Structural Flattening Enabled'));
+
             const password = await promptPassword('Create password for file(s):');
 
             const processFile = async (filePath) => {
@@ -118,7 +133,7 @@ program
                 console.log(chalk.dim(`   Processing: ${path.basename(filePath)} -> ${path.basename(outputName)}`));
 
                 const engine = new CipherEngine(password);
-                await engine.init(); // Unique salt per file
+                await engine.init(); 
                 
                 const readStream = fs.createReadStream(filePath);
                 const writeStream = fs.createWriteStream(outputName);
@@ -126,7 +141,13 @@ program
                 writeStream.write(engine._encodeHeader());
                 
                 await new Promise((resolve, reject) => {
-                    readStream
+                    let pipeline = readStream;
+                    
+                    if (options.flat) {
+                        pipeline = pipeline.pipe(createMinifier());
+                    }
+
+                    pipeline
                         .pipe(engine.getEncryptStream())
                         .pipe(writeStream)
                         .on('finish', resolve)
@@ -135,12 +156,12 @@ program
             };
 
             if (stats.isDirectory()) {
-                console.log(chalk.blue(`📂 Scanning directory: ${targetPath}`));
+                console.log(chalk.blue(`Scanning directory: ${targetPath}`));
                 await traverseDirectory(targetPath, '.c', processFile);
-                console.log(chalk.green('✅ Batch encryption complete.'));
+                console.log(chalk.green('Batch encryption complete.'));
             } else {
                 await processFile(targetPath);
-                console.log(chalk.green(`✅ Encrypted.`));
+                console.log(chalk.green(`Encrypted.`));
             }
 
         } catch (err) {
@@ -162,8 +183,8 @@ program
                 throw new Error(`'${targetPath}' is a directory. Use -r to process recursively.`);
             }
 
-            console.log(chalk.blue('🔓 Initiating Decryption...'));
-            const password = await promptPassword('Enter password:'); // Assume same pass for dir
+            console.log(chalk.blue('Initiating Decryption...'));
+            const password = await promptPassword('Enter password:');
 
             const processFile = async (filePath) => {
                 try {
@@ -174,36 +195,61 @@ program
                     const metadata = CipherEngine.decodeHeader(headerStr);
                     
                     const engine = new CipherEngine(password);
-                    await engine.init(metadata.saltHex);
-
-                    if (engine.authHash.toString('hex') !== metadata.authHex) {
-                        console.log(chalk.red(`   ❌ Skipped ${path.basename(filePath)}: Incorrect Password`));
-                        return;
-                    }
+                    
+                    // Pass the Auth Check Hex (if available in new format)
+                    await engine.init(metadata.saltHex, metadata.authCheckHex);
 
                     const readStream = fs.createReadStream(filePath);
                     const writeStream = fs.createWriteStream(outputName);
                     
                     await new Promise((resolve, reject) => {
+                        const decryptStream = engine.getDecryptStream();
+                        
+                        decryptStream.on('error', (err) => {
+                            reject(err);
+                        });
+
                         readStream
                             .pipe(createHeaderSkipper())
-                            .pipe(engine.getDecryptStream())
+                            .pipe(decryptStream)
                             .pipe(writeStream)
                             .on('finish', resolve)
                             .on('error', reject);
                     });
+
+                    return true; // Success
                 } catch (e) {
-                    console.log(chalk.red(`   ⚠️ Error processing ${path.basename(filePath)}: ${e.message}`));
+                    const outputName = filePath.replace(/\.mojic$/, '') + '.restored.c';
+                    
+                    // Cleanup output file on error
+                    setTimeout(() => {
+                         if (fs.existsSync(outputName)) {
+                             try { fs.unlinkSync(outputName); } catch(ign){}
+                         }
+                    }, 100);
+                    
+                    // Specific Error Messaging (No Emojis)
+                    if (e.message === "WRONG_PASSWORD") {
+                        console.log(chalk.red(`   Error: Incorrect Password`));
+                    } else if (e.message === "FILE_TAMPERED") {
+                        console.log(chalk.red(`   Error: File Tampered! Integrity check failed.`));
+                    } else {
+                        console.log(chalk.red(`   Error: ${e.message}`));
+                    }
+
+                    return false; // Failure
                 }
             };
 
             if (stats.isDirectory()) {
-                console.log(chalk.blue(`📂 Scanning directory: ${targetPath}`));
+                console.log(chalk.blue(`Scanning directory: ${targetPath}`));
                 await traverseDirectory(targetPath, '.mojic', processFile);
-                console.log(chalk.green('✅ Batch decryption complete.'));
+                console.log(chalk.green('Batch decryption complete.'));
             } else {
-                await processFile(targetPath);
-                console.log(chalk.green(`✅ Restored.`));
+                const success = await processFile(targetPath);
+                if (success) {
+                    console.log(chalk.green(`Restored.`));
+                }
             }
 
         } catch (err) {
@@ -211,32 +257,24 @@ program
         }
     });
 
-// --- Security Rotation Tools (SRT) ---
+// --- SRT ---
 
 const rotatePassword = async (file) => {
     try {
         if (!fs.existsSync(file)) throw new Error('File not found');
-        console.log(chalk.yellow(`🔄 Rotating Password for ${path.basename(file)}...`));
+        console.log(chalk.yellow(`Rotating Password for ${path.basename(file)}...`));
 
-        // 1. Authenticate Old
         const headerStr = await getStreamHeader(file);
         const metadata = CipherEngine.decodeHeader(headerStr);
         const oldPass = await promptPassword('Enter CURRENT password:');
         
         const oldEngine = new CipherEngine(oldPass);
-        await oldEngine.init(metadata.saltHex);
+        await oldEngine.init(metadata.saltHex, metadata.authCheckHex);
 
-        if (oldEngine.authHash.toString('hex') !== metadata.authHex) {
-            console.error(chalk.red('❌ Incorrect Current Password'));
-            process.exit(1);
-        }
-
-        // 2. Init New
         const newPass = await promptPassword('Enter NEW password:');
         const newEngine = new CipherEngine(newPass);
         await newEngine.init(); 
 
-        // 3. Process
         const tempFile = file + '.tmp';
         const readStream = fs.createReadStream(file);
         const writeStream = fs.createWriteStream(tempFile);
@@ -244,9 +282,13 @@ const rotatePassword = async (file) => {
         writeStream.write(newEngine._encodeHeader());
 
         await new Promise((resolve, reject) => {
+            const decryptStream = oldEngine.getDecryptStream();
+            
+            decryptStream.on('error', (err) => reject(err));
+
             readStream
                 .pipe(createHeaderSkipper())
-                .pipe(oldEngine.getDecryptStream())
+                .pipe(decryptStream)
                 .pipe(newEngine.getEncryptStream())
                 .pipe(writeStream)
                 .on('finish', resolve)
@@ -254,36 +296,33 @@ const rotatePassword = async (file) => {
         });
 
         fs.renameSync(tempFile, file);
-        console.log(chalk.green(`✅ Password updated.`));
+        console.log(chalk.green(`Password updated.`));
         
     } catch (err) {
-        console.error(chalk.red('Error:'), err.message);
+        if (fs.existsSync(file + '.tmp')) fs.unlinkSync(file + '.tmp');
+        if (err.message === "WRONG_PASSWORD") {
+            console.error(chalk.red('Error: Incorrect Current Password'));
+        } else {
+            console.error(chalk.red('Error:'), err.message);
+        }
     }
 };
 
 const reEncrypt = async (file) => {
     try {
         if (!fs.existsSync(file)) throw new Error('File not found');
-        console.log(chalk.yellow(`🎲 Re-shuffling Entropy for ${path.basename(file)}...`));
+        console.log(chalk.yellow(`Re-shuffling Entropy for ${path.basename(file)}...`));
 
-        // 1. Authenticate
         const headerStr = await getStreamHeader(file);
         const metadata = CipherEngine.decodeHeader(headerStr);
         const password = await promptPassword('Enter password:');
         
         const oldEngine = new CipherEngine(password);
-        await oldEngine.init(metadata.saltHex);
+        await oldEngine.init(metadata.saltHex, metadata.authCheckHex);
 
-        if (oldEngine.authHash.toString('hex') !== metadata.authHex) {
-            console.error(chalk.red('❌ Incorrect Password'));
-            process.exit(1);
-        }
-
-        // 2. Init New
         const newEngine = new CipherEngine(password);
         await newEngine.init(); 
 
-        // 3. Process
         const tempFile = file + '.tmp';
         const readStream = fs.createReadStream(file);
         const writeStream = fs.createWriteStream(tempFile);
@@ -291,9 +330,12 @@ const reEncrypt = async (file) => {
         writeStream.write(newEngine._encodeHeader());
 
         await new Promise((resolve, reject) => {
+            const decryptStream = oldEngine.getDecryptStream();
+            decryptStream.on('error', (err) => reject(err));
+
             readStream
                 .pipe(createHeaderSkipper())
-                .pipe(oldEngine.getDecryptStream())
+                .pipe(decryptStream)
                 .pipe(newEngine.getEncryptStream())
                 .pipe(writeStream)
                 .on('finish', resolve)
@@ -301,10 +343,15 @@ const reEncrypt = async (file) => {
         });
 
         fs.renameSync(tempFile, file);
-        console.log(chalk.green(`✅ File re-encrypted.`));
+        console.log(chalk.green(`File re-encrypted.`));
 
     } catch (err) {
-        console.error(chalk.red('Error:'), err.message);
+        if (fs.existsSync(file + '.tmp')) fs.unlinkSync(file + '.tmp');
+        if (err.message === "WRONG_PASSWORD") {
+            console.error(chalk.red('Error: Incorrect Password'));
+        } else {
+            console.error(chalk.red('Error:'), err.message);
+        }
     }
 };
 
@@ -313,11 +360,6 @@ program
     .description('Security and Rotation Tools')
     .option('--pass <file>', 'Update the password for an existing file')
     .option('--re <file>', 'Re-encrypt with new random seed (Same password)')
-    .addHelpText('after', `
-Examples:
-  $ mojic srt --pass secret.mojic   # Change the password of an encrypted file
-  $ mojic srt --re secret.mojic     # Re-scramble the emojis (new salt) with same password
-`)
     .action(async (options) => {
         if (options.pass) {
             await rotatePassword(options.pass);
@@ -328,13 +370,5 @@ Examples:
             program.commands.find(c => c.name() === 'srt').help();
         }
     });
-
-program.addHelpText('after', `
-Usage Examples:
-  $ mojic encode test.c          # Encrypt a single C file
-  $ mojic encode ./src -r        # Recursively encrypt all .c files in ./src
-  $ mojic decode test.mojic      # Decrypt a single file
-  $ mojic decode ./src -r        # Recursively decrypt all .mojic files
-`);
 
 program.parse(process.argv);

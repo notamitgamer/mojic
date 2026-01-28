@@ -1,14 +1,15 @@
 {
   "name": "mojic",
-  "version": "1.0.3",
-  "description": "Obfuscate C source code into emojis using password-seeded mapping",
+  "version": "1.1.0",
+  "description": "Obfuscate C source code into encrypted, password-seeded emoji streams.",
   "main": "bin/mojic.js",
   "bin": {
     "mojic": "bin/mojic.js"
   },
   "type": "module",
   "scripts": {
-    "start": "node bin/mojic.js"
+    "start": "node bin/mojic.js",
+    "build-binaries": "pkg . --out-path dist --public"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,9 @@
     "commander": "^11.1.0",
     "inquirer": "^9.2.12"
   },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -28,8 +32,22 @@
     "emoji",
     "obfuscation",
     "c",
-    "security"
+    "security",
+    "polymorphic"
   ],
   "author": "notamitgamer",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "pkg": {
+    "scripts": "bin/mojic.js",
+    "assets": [
+      "lib/**/*",
+      "package.json"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-linux-x64",
+      "node18-macos-x64"
+    ],
+    "outputPath": "dist"
+  }
 }

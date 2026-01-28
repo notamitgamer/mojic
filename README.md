@@ -1,27 +1,36 @@
-# Mojic 🔒🔮
+# Mojic v1.1.0
 
-> **Obfuscate C source code into a randomized stream of emojis using password-seeded encryption.**
+> **Operation Polymorphic Chaos: Obfuscate C source code into a randomized, password-seeded stream of emojis.**
 
-**Mojic** (Magic + Emoji + Logic) is a CLI tool that transforms readable C code into an unreadable mess of emojis. Unlike simple substitution ciphers, Mojic uses your password to seed a Pseudo-Random Number Generator (PRNG), creating a unique "Emoji Universe" for every password.
+**Mojic** (Magic + Emoji + Logic) is a sophisticated CLI tool designed to transform readable C code into an unrecognizable chaotic stream of emojis. Unlike simple substitution ciphers, Mojic uses your password to seed a cryptographically strong Pseudo-Random Number Generator (PRNG), creating a unique "Emoji Universe" and rolling cipher for every single session.
 
-## 🚀 Features
+## Key Features
 
-* **🔐 Seeded Shuffling:** Your password derives a seed that shuffles the emoji mapping. Two different passwords will produce completely different emoji outputs for the same file.
-* **🌚 Moon Header Protocol:** The file header (Salt + Auth Hash) is encoded using only Moon and Clock emojis to allow metadata reading before decryption.
-* **📂 Recursive Processing:** Encrypt or decrypt entire project directories with one flag.
-* **🔄 Security Rotation:** Rotate passwords or re-scramble the entropy of encrypted files without seeing the plaintext.
-* **⚡ Stream Based:** Handles large files efficiently using Node.js streams.
+* ** Xoshiro256** PRNG:** Uses a high-quality 256-bit state PRNG (seeded via PBKDF2-SHA512) to handle shuffling and polymorphism.
+* ** Polymorphic Keywords:** Common C keywords (`int`, `void`, `return`) are mapped to emojis that *change* every time they appear based on the PRNG state. Frequency analysis is impossible.
+* ** Base-1024 Compression:** Non-keyword code is compressed using a custom Base-1024 scheme (5 bytes → 4 emojis), keeping file size manageable.
+* ** Integrity Sealed:** Every file ends with an HMAC-SHA256 signature. Any tampering with the emoji stream results in an immediate `FILE_TAMPERED` error.
+* ** Moon Header Protocol:** Metadata (Salt + Auth Check) is encoded using a specific alphabet of Moon and Clock phases (`🌑🌒🕐`), allowing instant password verification before decryption starts.
+* ** Stream Architecture:** Built on Node.js `Transform` streams to handle large files efficiently with minimal memory footprint.
 
-## 📦 Installation
+## Installation
+
+Since Mojic is available on npm, you can install it globally with a single command:
 
 ```bash
 npm install -g mojic
 ```
 
-## 🛠️ Usage
+Or run it directly using `npx` without installing:
+
+```bash
+npx mojic encode main.c
+```
+
+## Usage
 
 ### 1. Encrypting Code (`encode`)
-Turns a `.c` file into a `.mojic` file.
+Transforms a `.c` file into a `.mojic` file.
 
 ```bash
 # Encrypt a single file
@@ -29,6 +38,9 @@ mojic encode main.c
 
 # Encrypt an entire directory recursively
 mojic encode ./src -r
+
+# Flatten/Minify code structure before encryption (Removes newlines/indentation)
+mojic encode main.c --flat
 ```
 *You will be prompted to create a password. This password is required to decrypt.*
 
@@ -44,24 +56,42 @@ mojic decode ./src -r
 ```
 
 ### 3. Security & Rotation Tools (`srt`)
-Manage encrypted files without revealing their contents.
+Manage encrypted files without ever revealing their plaintext contents.
 
 ```bash
-# Change the password of an encrypted file
+# Rotate Password: Changes the password of an encrypted file
 mojic srt --pass secret.mojic
 
-# Re-shuffle the encryption (New Salt) with the SAME password
-# (Useful if you want to change the visual emoji pattern without changing the password)
+# Re-Encrypt: Re-shuffles the entropy (New Salt) with the SAME password
+# (Useful to change the visual emoji pattern without changing the password)
 mojic srt --re secret.mojic
 ```
 
-## 🧠 How it Works
+## Under the Hood (Algorithm)
 
-1.  **Key Derivation:** Mojic uses **PBKDF2** to derive a 32-bit seed and an Auth Hash from your password and a random Salt.
-2.  **The Shuffle:** It uses a custom **Mulberry32 PRNG** seeded with your key to shuffle a "Universe" of ~1500 emojis.
-3.  **Tokenization:** C keywords (`int`, `return`, `void`) are tokenized and mapped to unique emojis from the shuffled universe. Remaining characters map to other emojis.
-4.  **The Header:** The Salt and Auth Hash are written to the top of the file using a fixed "Header Alphabet" (🌑🌒🌓🌔...) so the tool can verify your password before attempting decryption.
+Mojic v1.1.0 implements a custom crypto-system dubbed **"Operation Polymorphic Chaos"**.
 
-## 📄 License
+1.  **Derivation Phase:**
+    * **Input:** User Password + 16-byte Random Salt.
+    * **KDF:** `PBKDF2-SHA512` (100,000 iterations).
+    * **Output:** 64 bytes (32 bytes for PRNG Seed, 32 bytes for HMAC Auth Key).
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+2.  **The Emoji Universe:**
+    * The engine generates a universe of ~1,100 valid emojis (Emoticons, Transport, Symbols).
+    * This universe is **shuffled** using the `Xoshiro256**` PRNG initialized with the derived seed.
+
+3.  **Polymorphic Encryption:**
+    * **C Keywords:** The engine detects C keywords (e.g., `while`). It assigns them a "Base Emoji" from the shuffled universe.
+    * **The Twist:** It doesn't just print the Base Emoji. It calculates a random offset using the PRNG to pick a *different* emoji that maps back to the keyword. This means `int` might look like `🚀` on line 1 and `🌮` on line 5.
+
+4.  **Base-1024 Encoding:**
+    * Non-keyword data is buffered into 5-byte chunks.
+    * These chunks are treated as a single large integer and converted into 4 base-1024 digits (mapped to emojis), effectively compressing the stream density.
+
+5.  **The Header:**
+    * The Salt and a 4-byte Auth Check are written to the file header using the **Moon/Clock Alphabet** (`🌑🌒🌓🌔...`).
+    * **Benefit:** This allows `mojic` to tell you "Incorrect Password" instantly, rather than churning out garbage data first.
+
+## License
+
+This project is licensed under the Apache License 2.0.
