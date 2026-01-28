@@ -1,6 +1,6 @@
 {
   "name": "mojic",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Obfuscate C source code into emojis using password-seeded mapping",
   "main": "bin/mojic.js",
   "bin": {
@@ -10,11 +10,14 @@
   "scripts": {
     "start": "node bin/mojic.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/notamitgamer/mojic.git"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
-    "inquirer": "^9.2.12",
-    "mojic": "^1.0.2"
+    "inquirer": "^9.2.12"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -27,6 +30,6 @@
     "c",
     "security"
   ],
-  "author": "",
+  "author": "notamitgamer",
   "license": "Apache-2.0"
 }

@@ -12,7 +12,7 @@ import { CipherEngine } from '../lib/CipherEngine.js';
 program
     .name('mojic')
     .description('Obfuscate C source code into emojis')
-    .version('1.0.2')
+    .version('1.0.3')
     .addHelpCommand('help [command]', 'Display help for command')
     .showHelpAfterError();
 
