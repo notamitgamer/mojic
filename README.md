@@ -1,4 +1,4 @@
-# Mojic v1.2.1
+# Mojic v1.2.5
 
 > **Operation Polymorphic Chaos: Obfuscate C source code into a randomized, password-seeded stream of emojis.**
 
