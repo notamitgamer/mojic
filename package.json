@@ -1,6 +1,6 @@
 {
   "name": "@notamitgamer/mojic",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Obfuscate C source code into encrypted, password-seeded emoji streams.",
   "main": "bin/mojic.js",
   "bin": {

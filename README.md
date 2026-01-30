@@ -1,4 +1,4 @@
-# Mojic v2.1.1
+# Mojic v2.1.2
 
 > **Operation Ironclad: Obfuscate C source code into a randomized, password-seeded stream of emojis.**
 

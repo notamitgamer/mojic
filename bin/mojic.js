@@ -9,7 +9,7 @@ import { Transform } from 'stream';
 import { StringDecoder } from 'string_decoder';
 import { CipherEngine } from '../lib/CipherEngine.js';
 
-const VERSION = '2.1.1';
+const VERSION = '2.1.2';
 
 program
     .name('mojic')
