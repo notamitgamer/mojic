@@ -1,5 +1,7 @@
 # Mojic v2.1.2
 
+![NPM Downloads](https://img.shields.io/npm/d18m/mojic)
+
 > **Operation Ironclad: Obfuscate C source code into a randomized, password-seeded stream of emojis.**
 
 **Mojic** (Magic + Emoji + Logic) is a sophisticated CLI tool designed to transform readable C code into an unrecognizable chaotic stream of emojis. Unlike simple substitution ciphers, Mojic uses your password to seed a cryptographically strong Pseudo-Random Number Generator (PRNG), creating a unique "Emoji Universe" and rolling cipher for every single session.
