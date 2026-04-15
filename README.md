@@ -1,4 +1,4 @@
-# Mojic v2.1.3
+# Mojic v2.1.4
 
 ![NPM Downloads](https://img.shields.io/npm/d18m/mojic)
 

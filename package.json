@@ -1,6 +1,6 @@
 {
-  "name": "mojic",
-  "version": "2.1.3",
+  "name": "@notamitgamer/mojic",
+  "version": "2.1.4",
   "description": "Obfuscate C source code into encrypted, password-seeded emoji streams.",
   "main": "bin/mojic.js",
   "bin": {
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/notamitgamer/mojic.git"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
+    "registry": "https://npm.pkg.github.com/",
     "access": "public"
   },
   "dependencies": {
