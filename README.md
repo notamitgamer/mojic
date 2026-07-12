@@ -1,4 +1,20 @@
-# Mojic v2.1.4
+> [!IMPORTANT]
+> ## Notice: Project Discontinuation & Local Patch (v2.1.5)
+> I apologize for the inconvenience, but Mojic is being discontinued. This release (v2.1.5) marks the final patch to the GitHub repository.
+>
+> I have forgotten my npm account password, and during a recent migration to Linux, my recovery passcode file was also lost, completely locking me out of the account. Because of this, I am unable to publish a patch to fix a broken dependency (@notamitgamer/mojic) that is currently causing npm install commands from the registry to fail with a 404 error.
+> 
+> If you still wish to use the tool, you can clone this repository and run or install it locally:
+> ```bash
+> # Clone and navigate to the directory
+> git clone https://github.com/notamitgamer/mojic.git
+> cd mojic
+> 
+> # Install dependencies and link it globally to use the 'mojic' command
+> npm install
+> npm link
+
+# Mojic v2.1.5
 
 ![NPM Downloads](https://img.shields.io/npm/d18m/mojic)
 
